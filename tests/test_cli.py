@@ -79,7 +79,6 @@ EXPECTED_OPTIONS = """
 [--commit | --no-commit]
 [--tag | --no-tag]
 [--tag-name TAG_NAME]
-[--tag-message TAG_MESSAGE]
 [--message COMMIT_MSG]
 part
 [file [file ...]]
@@ -121,7 +120,7 @@ optional arguments:
   --no-tag              Do not create a tag in version control
   --tag-name TAG_NAME   Tag name (only works with --tag) (default:
                         v{new_version})
-  --tag-message TAG_MESSAGE
+  --tag-message [TAG_MESSAGE]
                         Tag message (default: Bump version: {current_version}
                         → {new_version})
   --message COMMIT_MSG, -m COMMIT_MSG
@@ -786,6 +785,21 @@ def test_annotated_tag(tmpdir, vcs):
         assert b'test 42.4.2-tag' in describe_out
     else:
         raise ValueError("Unknown VCS")
+
+
+@pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git"), xfail_if_no_hg("hg")])
+def test_annotated_editor_tag(tmpdir, vcs):
+    tmpdir.chdir()
+    check_call([vcs, "init"])
+    tmpdir.join("VERSION").write("42.5.1")
+    check_call([vcs, "add", "VERSION"])
+    check_call([vcs, "commit", "-m", "initial commit"])
+
+    with mock.patch("bumpversion.logger") as logger:
+        main(['patch', '--current-version', '42.4.1', '--commit', '--tag', 'VERSION', '--dry-run', '--tag-message'])
+
+    actual_log ="\n".join(_mock_calls_to_string(logger)[4:])
+    assert "Would tag 'v42.4.2' with message from editor" in actual_log
 
 
 @pytest.mark.parametrize(("vcs"), [xfail_if_no_git("git")])

@@ -152,7 +152,9 @@ class Git(BaseVCS):
         command = ["git", "tag", name]
         if message:
             command += ['--message', message]
-        subprocess.check_output(command)
+        elif message is None:
+            command += ['--annotate']
+        subprocess.call(command)
 
 
 class Mercurial(BaseVCS):
@@ -187,7 +189,9 @@ class Mercurial(BaseVCS):
         command = ["hg", "tag", name]
         if message:
             command += ['--message', message]
-        subprocess.check_output(command)
+        elif message is None:
+            command += ['--edit']
+        subprocess.call(command)
 
 VCS = [Git, Mercurial]
 
@@ -786,7 +790,7 @@ def main(original_args=None):
                          help='Tag name (only works with --tag)',
                          default=defaults.get('tag_name', 'v{new_version}'))
 
-    parser3.add_argument('--tag-message', metavar='TAG_MESSAGE', dest='tag_message',
+    parser3.add_argument('--tag-message', metavar='TAG_MESSAGE', dest='tag_message', nargs='?',
                          help='Tag message', default=defaults.get('tag_message', 'Bump version: {current_version} → {new_version}'))
 
     parser3.add_argument('--message', '-m', metavar='COMMIT_MSG',
@@ -804,11 +808,11 @@ def main(original_args=None):
                          nargs='*',
                          help='Files to change', default=file_names)
 
-    args = parser3.parse_args(remaining_argv + positionals)
+    args = parser3.parse_args(positionals + remaining_argv)
 
     if args.dry_run:
         logger.info("Dry run active, won't touch any files.")
-    
+
     if args.new_version:
         new_version = vc.parse(args.new_version)
 
@@ -922,11 +926,13 @@ def main(original_args=None):
         vcs.commit(message=commit_message)
 
     tag_name = args.tag_name.format(**vcs_context)
-    tag_message = args.tag_message.format(**vcs_context)
+    tag_message = (args.tag_message.format(**vcs_context)
+                   if args.tag_message is not None else None)
     logger.info("{} '{}' {} in {}".format(
         "Would tag" if not do_tag else "Tagging",
         tag_name,
-        "with message '{}'".format(tag_message) if tag_message else "without message",
+        ("with message from editor" if tag_message is None else
+         "with message '{}'".format(tag_message)),
         vcs.__name__
     ))
 
