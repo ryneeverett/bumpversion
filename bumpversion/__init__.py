@@ -154,7 +154,7 @@ class Git(BaseVCS):
             command += ['--message', message]
         elif message is None:
             command += ['--annotate']
-        subprocess.call(command)
+        subprocess.check_call(command)
 
 
 class Mercurial(BaseVCS):
@@ -191,7 +191,7 @@ class Mercurial(BaseVCS):
             command += ['--message', message]
         elif message is None:
             command += ['--edit']
-        subprocess.call(command)
+        subprocess.check_call(command)
 
 VCS = [Git, Mercurial]
 

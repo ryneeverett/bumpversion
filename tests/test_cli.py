@@ -791,7 +791,7 @@ def test_annotated_tag(tmpdir, vcs):
 def test_annotated_editor_tag(tmpdir, vcs):
     tmpdir.chdir()
     check_call([vcs, "init"])
-    tmpdir.join("VERSION").write("42.5.1")
+    tmpdir.join("VERSION").write("42.4.1")
     check_call([vcs, "add", "VERSION"])
     check_call([vcs, "commit", "-m", "initial commit"])
 
